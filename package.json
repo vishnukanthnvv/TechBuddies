@@ -1,0 +1,23 @@
+{
+  "name": "techbuddies",
+  "version": "1.0.0",
+  "description": "social media platform to connect with other Tech enthusiasts",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nodesJS",
+    "javascript",
+    "react",
+    "express",
+    "mongo"
+  ],
+  "author": "Vishnu kanth",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
