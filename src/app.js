@@ -22,16 +22,23 @@ app.post("/user/login", (req, res) => {
 app.use("/user", authUser);
 
 app.get("/user", (req, res) => {
-    const id = req.query.userId;
-    const age = req.query.age;
-    res.send({
-        "userId": id,
-        "firstName": "Vishnu Kanth",
-        "lastName": "Nalamati",
-        "dob": "18/08/1988",
-        "city": "Vizag",
-        "age": age
-    });
+    try{
+        const id = req.query.userId;
+        const age = req.query.age;
+        // throw new Error("some bad req error");
+        res.send({
+            "userId": id,
+            "firstName": "Vishnu Kanth",
+            "lastName": "Nalamati",
+            "dob": "18/08/1988",
+            "city": "Vizag",
+            "age": age
+        });
+    }
+    catch(err){
+        res.status(500).send("Unexpected error. contact support team");
+
+    }
 });
 
 app.post("/user", (req, res) => {
@@ -39,6 +46,7 @@ app.post("/user", (req, res) => {
 })
 
 app.patch("/user/:userId", (req, res) => {
+    // throw new Error("asfavaf");
     res.send(`User ${req.params.userId} details updated successfully`)
 });
 
@@ -54,6 +62,10 @@ app.use("/test", (req, res) => {
 app.use("/", (req, res) => {
     res.send("Welcome to Dashboard");
 });
+
+app.use("/", (err, req, res, next) => {
+    res.status(500).send("Observed fatal error");
+})
 
 app.listen(3000, () => {
     console.log("Server listening on port 3000");
