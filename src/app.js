@@ -3,8 +3,32 @@ const express = require("express");
 const app = express();
 
 const { authAdmin, authUser} = require("./middlewares/auth");
+const { connectDB } = require("./config/database");
+const User = require("./models/user");
 
-app.use("/admin", authAdmin);
+connectDB()
+    .then(() => {
+        console.log("Connected succesfully to database");
+    })
+    .then(() => {
+        app.listen(3000, () => {
+            console.log("Server listening on port 3000");
+        });
+    })
+app.use(express.json());
+
+app.post("/signup", async(req, res) => {
+    const user = new User(req.body);
+
+    try{
+        await user.save();
+        res.send("User created successfully");
+    } catch(err){
+        res.status(400).send("Error ocurred while creating user" + err.message);
+    }
+})
+
+/* app.use("/admin", authAdmin);
 
 app.get("/admin/getAllData", (req,res) => {
     res.send("sending all users data");
@@ -65,8 +89,4 @@ app.use("/", (req, res) => {
 
 app.use("/", (err, req, res, next) => {
     res.status(500).send("Observed fatal error");
-})
-
-app.listen(3000, () => {
-    console.log("Server listening on port 3000");
-});
+}) */
