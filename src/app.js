@@ -28,6 +28,79 @@ app.post("/signup", async(req, res) => {
     }
 })
 
+app.get("/user", async (req, res) => {
+    try{
+        const users = await User.find({ emailId: req.body.emailId });
+        if(!users.length){
+            res.send("No users found");
+        } else {
+            console.log(`Found ${users.length} users`);
+            res.send(users);
+        }
+    } catch(err){
+        res.status(404).send("Encountered an error" + err.message);
+    }
+});
+
+app.get("/feed", async (req, res) => {
+    try{
+        const users = await User.find({});
+        if(!users.length){
+            res.send("No users founds");
+        } else {
+            console.log(`FOund ${users.length} users`);
+            res.send(users);
+        }
+    } catch(err){
+        res.status(400).send("Encountered error", + err.message);
+    }
+});
+
+app.delete("/user", async (req, res) => {
+    const emailId = req.body.emailId;
+    try{
+        const user = await User.findOneAndDelete({emailId});
+        res.send("User deleted successfully");
+    } catch(err){
+        res.status(400).send("Error while deleting user", + err.message);
+    }
+});
+
+app.delete("/user", async (req, res) => {
+    const userId = req.body.userId;
+    try{
+        const user = await User.findByIdAndDelete(userId);
+        res.send("User deleted successfully");
+    } catch(err){
+        res.status(400).send("Error while deleting user", + err.message);
+    }
+});
+
+app.patch("/user", async (req, res) => {
+    const userId = req.body._id;
+    const data = req.body;
+    try{
+        const user = await User.findByIdAndUpdate(userId, data, {returnDocument: "after"});
+        console.log(user);
+        res.send("User updated successfully");
+    } catch(err){
+        res.status(400).send("Error ocurred while updating user", +err.message);
+    }
+});
+
+app.patch("/userByEmail", async (req, res) => {
+    const emailId = req.body.emailId;
+    const data = req.body;
+
+    try{
+        const user = await User.findOneAndUpdate({ emailId }, data, { returnDocument: 'after' });
+        console.log(user);
+        res.send("Usre updated successfully");
+    }catch(err){
+        res.status(400).send("Error ocurred while updating user", +err.message);
+    }
+});
+
 /* app.use("/admin", authAdmin);
 
 app.get("/admin/getAllData", (req,res) => {
