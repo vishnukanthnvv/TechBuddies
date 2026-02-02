@@ -6,6 +6,23 @@ const { authAdmin, authUser} = require("./middlewares/auth");
 const { connectDB } = require("./config/database");
 const User = require("./models/user");
 
+const validateUpdate = (data) => {
+    const updatesAllowed = ["firstName", "lastName", "age", "photoUrl", "skills", "password", "gender", "about"];
+    const isUpdateAllowed = Object.keys(data).every(k => {
+        return updatesAllowed.includes(k);
+    });
+
+    if(!isUpdateAllowed){
+        throw new Error("Update not allowed for provided properties")
+    } else return;
+}
+
+const validateSkills = (skills) => {
+        if(skills.length > 10){
+            throw new Error("Provided skills exceeds the max limit of 10");
+        } else return; 
+}
+
 connectDB()
     .then(() => {
         console.log("Connected succesfully to database");
@@ -21,6 +38,7 @@ app.post("/signup", async(req, res) => {
     const user = new User(req.body);
 
     try{
+        validateSkills(user?.skills);
         await user.save();
         res.send("User created successfully");
     } catch(err){
@@ -52,7 +70,7 @@ app.get("/feed", async (req, res) => {
             res.send(users);
         }
     } catch(err){
-        res.status(400).send("Encountered error", + err.message);
+        res.status(400).send("Encountered error" + err.message);
     }
 });
 
@@ -62,7 +80,7 @@ app.delete("/user", async (req, res) => {
         const user = await User.findOneAndDelete({emailId});
         res.send("User deleted successfully");
     } catch(err){
-        res.status(400).send("Error while deleting user", + err.message);
+        res.status(400).send("Error while deleting user" + err.message);
     }
 });
 
@@ -72,14 +90,19 @@ app.delete("/user", async (req, res) => {
         const user = await User.findByIdAndDelete(userId);
         res.send("User deleted successfully");
     } catch(err){
-        res.status(400).send("Error while deleting user", + err.message);
+        res.status(400).send("Error while deleting user" + err.message);
     }
 });
 
-app.patch("/user", async (req, res) => {
-    const userId = req.body._id;
+app.patch("/user/:userId", async (req, res) => {
+    const userId = req.params.userId;
     const data = req.body;
     try{
+
+        validateUpdate(data);
+
+        validateSkills(data?.skills);
+
         const user = await User.findByIdAndUpdate(userId, data, {
             returnDocument: "after",
             runValidators: true
@@ -87,15 +110,18 @@ app.patch("/user", async (req, res) => {
         console.log(user);
         res.send("User updated successfully");
     } catch(err){
-        res.status(400).send("Error ocurred while updating user", +err.message);
+        res.status(400).send("Error ocurred while updating user: " + err.message);
     }
 });
 
-app.patch("/userByEmail", async (req, res) => {
-    const emailId = req.body.emailId;
+app.patch("/userByEmail/:emailId", async (req, res) => {
+    const emailId = req.params.emailId;
     const data = req.body;
 
     try{
+        validateUpdate(data);
+        validateSkills(data?.skills);
+
         const user = await User.findOneAndUpdate({ emailId }, data, { 
             returnDocument: 'after',
             runValidators: true
@@ -103,7 +129,7 @@ app.patch("/userByEmail", async (req, res) => {
         console.log(user);
         res.send("Usre updated successfully");
     }catch(err){
-        res.status(400).send("Error ocurred while updating user", +err.message);
+        res.status(400).send("Error ocurred while updating user: " +err.message);
     }
 });
 
