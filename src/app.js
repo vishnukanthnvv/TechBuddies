@@ -1,28 +1,13 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
+const validator = require("validator");
 
-const app = express();
-
+const { validateSignup, validateUpdate, validateSkills} = require("./utils/validation");
 const { authAdmin, authUser} = require("./middlewares/auth");
 const { connectDB } = require("./config/database");
 const User = require("./models/user");
 
-const validateUpdate = (data) => {
-    const updatesAllowed = ["firstName", "lastName", "age", "photoUrl", "skills", "password", "gender", "about"];
-    const isUpdateAllowed = Object.keys(data).every(k => {
-        return updatesAllowed.includes(k);
-    });
-
-    if(!isUpdateAllowed){
-        throw new Error("Update not allowed for provided properties")
-    } else return;
-}
-
-const validateSkills = (skills) => {
-        if(skills.length > 10){
-            throw new Error("Provided skills exceeds the max limit of 10");
-        } else return; 
-}
-
+const app = express();
 connectDB()
     .then(() => {
         console.log("Connected succesfully to database");
@@ -35,16 +20,66 @@ connectDB()
 app.use(express.json());
 
 app.post("/signup", async(req, res) => {
-    const user = new User(req.body);
+    const {
+        firstName,
+        lastName,
+        emailId,
+        password
+    } = req.body;
 
     try{
-        validateSkills(user?.skills);
+        // validate user data
+        validateSignup(req);
+        validateSkills(req.body?.skills);
+        
+        // encrypt password
+        const passHash = await bcrypt.hash(password, 10);
+        
+        // Create an instance of User model and save to db
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: passHash
+        });
+
         await user.save();
         res.send("User created successfully");
     } catch(err){
-        res.status(400).send("Error ocurred while creating user" + err.message);
+        res.status(400).send("Error: " + err.message);
     }
 })
+
+app.post("/login", async (req, res) => {
+    const {
+        emailId,
+        password
+    } = req.body;
+
+    try{
+        const isValidEmail = await validator.isEmail(emailId);
+        if(!isValidEmail){
+            throw new Error("Not a valid emailId");
+        }
+
+        const user = await User.findOne({ emailId });
+
+        if(!user){
+            throw new Error("email Invalid login credentials");
+        }
+
+        const isCorrectPass = await bcrypt.compare(password, user.password);
+
+        if(!isCorrectPass){
+            throw new Error("password Invalid login credentials");
+        }
+
+        res.send("User login successfull");
+    }
+    catch(err){
+        res.status(400).send("Error: " +err.message);
+    }
+});
 
 app.get("/user", async (req, res) => {
     try{
@@ -56,7 +91,7 @@ app.get("/user", async (req, res) => {
             res.send(users);
         }
     } catch(err){
-        res.status(404).send("Encountered an error" + err.message);
+        res.status(404).send("Error: " + err.message);
     }
 });
 
@@ -70,7 +105,7 @@ app.get("/feed", async (req, res) => {
             res.send(users);
         }
     } catch(err){
-        res.status(400).send("Encountered error" + err.message);
+        res.status(400).send("Encountered error: " + err.message);
     }
 });
 
@@ -80,7 +115,7 @@ app.delete("/user", async (req, res) => {
         const user = await User.findOneAndDelete({emailId});
         res.send("User deleted successfully");
     } catch(err){
-        res.status(400).send("Error while deleting user" + err.message);
+        res.status(400).send("Error while deleting user: " + err.message);
     }
 });
 
@@ -90,7 +125,7 @@ app.delete("/user", async (req, res) => {
         const user = await User.findByIdAndDelete(userId);
         res.send("User deleted successfully");
     } catch(err){
-        res.status(400).send("Error while deleting user" + err.message);
+        res.status(400).send("Error while deleting user: " + err.message);
     }
 });
 
@@ -110,7 +145,7 @@ app.patch("/user/:userId", async (req, res) => {
         console.log(user);
         res.send("User updated successfully");
     } catch(err){
-        res.status(400).send("Error ocurred while updating user: " + err.message);
+        res.status(400).send("Error: " + err.message);
     }
 });
 
@@ -129,7 +164,7 @@ app.patch("/userByEmail/:emailId", async (req, res) => {
         console.log(user);
         res.send("Usre updated successfully");
     }catch(err){
-        res.status(400).send("Error ocurred while updating user: " +err.message);
+        res.status(400).send("Error: " +err.message);
     }
 });
 
