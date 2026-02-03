@@ -5,7 +5,7 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 
 const { validateSignup, validateUpdate, validateSkills} = require("./utils/validation");
-const { authAdmin, authUser} = require("./middlewares/auth");
+const { authUser} = require("./middlewares/auth");
 const { connectDB } = require("./config/database");
 const User = require("./models/user");
 
@@ -78,8 +78,9 @@ app.post("/login", async (req, res) => {
             throw new Error("password Invalid login credentials");
         }
 
-        const token = await jwt.sign({_id: user._id}, "TechBuddies@123");
-        res.cookie("token", token);
+        const token = await jwt.sign({_id: user._id}, "TechBuddies@123", { expiresIn: '7d'});
+
+        res.cookie("token", token, { expires: new Date(Date.now() + 7 * (24 * 3600000))});
         res.send("User login successfull");
     }
     catch(err){
@@ -87,18 +88,10 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", authUser, async (req, res) => {
     
     try{
-        const { token } = req.cookies;
-
-        if(!token){
-            throw new Error("Invalid token");
-        }
-
-        const cookieDecoded = await jwt.verify(token, "TechBuddies@123");
-        const { _id } = cookieDecoded;
-        const profile = await User.findOne({ _id });
+        const profile = req.user;
 
         if(!profile){
             throw new Error("invalid token. please login again");
