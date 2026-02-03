@@ -55,12 +55,13 @@ app.post("/signup", async(req, res) => {
 })
 
 app.post("/login", async (req, res) => {
-    const {
-        emailId,
-        password
-    } = req.body;
-
+    
     try{
+        const {
+            emailId,
+            password
+        } = req.body;
+
         const isValidEmail = await validator.isEmail(emailId);
         if(!isValidEmail){
             throw new Error("Not a valid emailId");
@@ -72,15 +73,17 @@ app.post("/login", async (req, res) => {
             throw new Error("email Invalid login credentials");
         }
 
-        const isCorrectPass = await bcrypt.compare(password, user.password);
+        const isCorrectPass = await user.validatePassword(password);
 
         if(!isCorrectPass){
             throw new Error("password Invalid login credentials");
         }
 
-        const token = await jwt.sign({_id: user._id}, "TechBuddies@123", { expiresIn: '7d'});
-
-        res.cookie("token", token, { expires: new Date(Date.now() + 7 * (24 * 3600000))});
+        const token = await user.getJwt();
+        
+        res.cookie("token", token, { 
+            expires: new Date(Date.now() + 7 * (24 * 3600000))
+        });
         res.send("User login successfull");
     }
     catch(err){
