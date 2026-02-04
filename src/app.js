@@ -1,15 +1,20 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
-const validator = require("validator");
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
 
-const { validateSignup, validateUpdate, validateSkills} = require("./utils/validation");
-const { authUser} = require("./middlewares/auth");
 const { connectDB } = require("./config/database");
 const User = require("./models/user");
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
 
 const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
 
 connectDB()
     .then(() => {
@@ -20,93 +25,6 @@ connectDB()
             console.log("Server listening on port 3000");
         });
     })
-app.use(express.json());
-app.use(cookieParser());
-
-app.post("/signup", async(req, res) => {
-    const {
-        firstName,
-        lastName,
-        emailId,
-        password
-    } = req.body;
-
-    try{
-        // validate user data
-        validateSignup(req);
-        validateSkills(req.body?.skills);
-        
-        // encrypt password
-        const passHash = await bcrypt.hash(password, 10);
-        
-        // Create an instance of User model and save to db
-        const user = new User({
-            firstName,
-            lastName,
-            emailId,
-            password: passHash
-        });
-
-        await user.save();
-        res.send("User created successfully");
-    } catch(err){
-        res.status(400).send("Error: " + err.message);
-    }
-})
-
-app.post("/login", async (req, res) => {
-    
-    try{
-        const {
-            emailId,
-            password
-        } = req.body;
-
-        const isValidEmail = await validator.isEmail(emailId);
-        if(!isValidEmail){
-            throw new Error("Not a valid emailId");
-        }
-
-        const user = await User.findOne({ emailId });
-
-        if(!user){
-            throw new Error("email Invalid login credentials");
-        }
-
-        const isCorrectPass = await user.validatePassword(password);
-
-        if(!isCorrectPass){
-            throw new Error("password Invalid login credentials");
-        }
-
-        const token = await user.getJwt();
-        
-        res.cookie("token", token, { 
-            expires: new Date(Date.now() + 7 * (24 * 3600000))
-        });
-        res.send("User login successfull");
-    }
-    catch(err){
-        res.status(400).send("Error: " +err.message);
-    }
-});
-
-app.get("/profile", authUser, async (req, res) => {
-    
-    try{
-        const profile = req.user;
-
-        if(!profile){
-            throw new Error("invalid token. please login again");
-        }
-        
-        res.send(profile);
-    }
-    catch(err){
-        res.status(400).send("Error: " + err.message);
-    }     
-});
-
 
 app.get("/user", async (req, res) => {
     try{
@@ -136,64 +54,7 @@ app.get("/feed", async (req, res) => {
     }
 });
 
-app.delete("/user", async (req, res) => {
-    const emailId = req.body.emailId;
-    try{
-        const user = await User.findOneAndDelete({emailId});
-        res.send("User deleted successfully");
-    } catch(err){
-        res.status(400).send("Error while deleting user: " + err.message);
-    }
-});
 
-app.delete("/user", async (req, res) => {
-    const userId = req.body.userId;
-    try{
-        const user = await User.findByIdAndDelete(userId);
-        res.send("User deleted successfully");
-    } catch(err){
-        res.status(400).send("Error while deleting user: " + err.message);
-    }
-});
-
-app.patch("/user/:userId", async (req, res) => {
-    const userId = req.params.userId;
-    const data = req.body;
-    try{
-
-        validateUpdate(data);
-
-        validateSkills(data?.skills);
-
-        const user = await User.findByIdAndUpdate(userId, data, {
-            returnDocument: "after",
-            runValidators: true
-        });
-        console.log(user);
-        res.send("User updated successfully");
-    } catch(err){
-        res.status(400).send("Error: " + err.message);
-    }
-});
-
-app.patch("/userByEmail/:emailId", async (req, res) => {
-    const emailId = req.params.emailId;
-    const data = req.body;
-
-    try{
-        validateUpdate(data);
-        validateSkills(data?.skills);
-
-        const user = await User.findOneAndUpdate({ emailId }, data, { 
-            returnDocument: 'after',
-            runValidators: true
-        });
-        console.log(user);
-        res.send("Usre updated successfully");
-    }catch(err){
-        res.status(400).send("Error: " +err.message);
-    }
-});
 
 /* app.use("/admin", authAdmin);
 
