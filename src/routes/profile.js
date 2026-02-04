@@ -4,7 +4,7 @@ const { validateUpdate, validateSkills } = require("../utils/validation");
 const { authUser } = require("../middlewares/auth");
 const User = require("../models/user");
 
-profileRouter.get("/profile", authUser, async (req, res) => {
+profileRouter.get("/profile/view", authUser, async (req, res) => {
     
     try{
         const profile = req.user;
@@ -20,20 +20,25 @@ profileRouter.get("/profile", authUser, async (req, res) => {
     }     
 });
 
-profileRouter.patch("/user/:userId", authUser, async (req, res) => {
-    const userId = req.params.userId;
+profileRouter.patch("/profile/edit", authUser, async (req, res) => {
     const data = req.body;
     try{
-
         validateUpdate(data);
         validateSkills(data?.skills);
 
-        const user = await User.findByIdAndUpdate(userId, data, {
-            returnDocument: "after",
-            runValidators: true
+        const loggedInUser = req.user;
+        console.log(loggedInUser);
+
+        Object.keys(data).forEach((key) => {
+            loggedInUser[key] = data[key];
+        })
+
+        await loggedInUser.save();
+
+        res.send({ 
+            message:`${loggedInUser.firstName}, Your profile has been updated successfully`,
+            data: loggedInUser
         });
-        console.log(user);
-        res.send("User updated successfully");
     } catch(err){
         res.status(400).send("Error: " + err.message);
     }

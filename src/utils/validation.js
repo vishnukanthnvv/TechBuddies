@@ -24,7 +24,7 @@ const validateSignup = (req) => {
 }
 
 const validateUpdate = (data) => {
-    const updatesAllowed = ["firstName", "lastName", "age", "photoUrl", "skills", "password", "gender", "about"];
+    const updatesAllowed = ["firstName", "lastName", "age", "photoUrl", "skills", "gender", "about"];
     const isUpdateAllowed = Object.keys(data).every(k => {
         return updatesAllowed.includes(k);
     });
