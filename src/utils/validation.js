@@ -23,6 +23,12 @@ const validateSignup = (req) => {
     }
 }
 
+const validatePassword = (password) => {
+    if(!validator.isStrongPassword(password)){
+        throw new Error("Password not strong enough");
+    } else return true
+}
+
 const validateUpdate = (data) => {
     const updatesAllowed = ["firstName", "lastName", "age", "photoUrl", "skills", "gender", "about"];
     const isUpdateAllowed = Object.keys(data).every(k => {
@@ -43,5 +49,6 @@ const validateSkills = (skills) => {
 module.exports = {
     validateSignup,
     validateSkills,
-    validateUpdate
+    validateUpdate,
+    validatePassword
 }

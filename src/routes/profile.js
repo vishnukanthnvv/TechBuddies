@@ -1,6 +1,7 @@
 const express = require("express");
 const profileRouter = express.Router();
-const { validateUpdate, validateSkills } = require("../utils/validation");
+const bcrypt = require("bcrypt");
+const { validateUpdate, validateSkills, validatePassword } = require("../utils/validation");
 const { authUser } = require("../middlewares/auth");
 const User = require("../models/user");
 
@@ -44,9 +45,34 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
     }
 });
 
+profileRouter.patch("/profile/password", authUser, async (req, res) => {
+    try{
+        const { currPassword, newPassword } = req.body;
+        const user = req.user;
+        const isCorrectPass = await user.validatePassword(currPassword);
+        console.log(isCorrectPass);
+        if(!isCorrectPass){
+            throw new Error("Enter correct current password to set a new password");
+        }
+        const isStrongPass = validatePassword(newPassword);
+        if(isCorrectPass && isStrongPass){
+
+            const newPassHash = await bcrypt.hash(newPassword, 10);
+            user.password = newPassHash;
+            await user.save();
+            res.send("password changed successfully");
+        } else {
+            throw new Error("Something went wrong.try with correct password");
+        }
+    }
+    catch(err){
+        res.status(400).send("Error: " +err.message);
+    }
+});
+
 profileRouter.patch("/userByEmail/:emailId", authUser, async (req, res) => {
     const emailId = req.params.emailId;
-    const data = req.body;
+    const data = req.body;  
 
     try{
         validateUpdate(data);
