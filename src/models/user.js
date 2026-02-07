@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         immutable: false,
         maxLength: 40,
+        unique: true,
         validate(val){
             if(!validator.isEmail(val)){
                 throw new Error("Incorrect Email ID: " + val);
