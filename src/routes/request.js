@@ -21,7 +21,6 @@ requestRouter.post("/request/send/:status/:userId", authUser, async (req, res) =
         
         // check if toUser exists
         const toUser = await User.findById(toUserId);
-        console.log(toUser);
         if(!toUser){
             return res.status(400).json({message: "User not found to send connection request"});
         }
@@ -59,5 +58,44 @@ requestRouter.post("/request/send/:status/:userId", authUser, async (req, res) =
         res.status(400).send("Error: " +err.message);
     }
 });
+
+requestRouter.post("/request/review/:status/:requestId", authUser, async (req,res) => {
+    try {
+        const requestId = req.params.requestId;
+        const status = req.params.status;
+        const { _id } = req.user;
+
+        // check if requested status change is valid
+        const allowedStatus = ["accepted", "rejected"];
+        const isAllowedStatus = allowedStatus.includes(status);
+        if(!isAllowedStatus){
+            return res.status(400).json({
+                message: `Not a valid status: ${status}`
+            });
+        }
+
+        //check if request exists and if it was to the current logged in user with correct status
+        const request = await connectionRequest.findById({
+            _id: requestId,
+            toUserId: _id,
+            status: "interested"
+        })
+        if(!request){
+            return res.status(404).json({
+                message: `Request not found, please send correct requestId.`
+            })
+        }
+
+        request.status = status;
+        const data = await request.save();
+        res.json({
+            message: `Connection request ${status} successfully`,
+            data
+        });
+    }
+    catch(err){
+        res.status(400).send("Error: " +err.message);
+    }
+})
 
 module.exports = requestRouter;
