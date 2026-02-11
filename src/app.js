@@ -42,7 +42,7 @@ app.get("/user", async (req, res) => {
     }
 });
 
-app.get("/feed", async (req, res) => {
+/* app.get("/feed", async (req, res) => {
     try{
         const users = await User.find({});
         if(!users.length){
@@ -54,7 +54,7 @@ app.get("/feed", async (req, res) => {
     } catch(err){
         res.status(400).send("Encountered error: " + err.message);
     }
-});
+}); */
 
 
 
