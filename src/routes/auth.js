@@ -55,13 +55,13 @@ authRouter.post("/login", async (req, res) => {
         const user = await User.findOne({ emailId });
 
         if(!user){
-            throw new Error("email Invalid login credentials");
+            throw new Error("Invalid login credentials");
         }
 
         const isCorrectPass = await user.validatePassword(password);
 
         if(!isCorrectPass){
-            throw new Error("password Invalid login credentials");
+            throw new Error("Invalid login credentials");
         }
 
         const token = await user.getJwt();
