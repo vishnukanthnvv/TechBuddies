@@ -22,8 +22,8 @@ profileRouter.get("/profile/view", authUser, async (req, res) => {
 });
 
 profileRouter.patch("/profile/edit", authUser, async (req, res) => {
-    const data = req.body;
     try{
+        const data = req.body;
         validateUpdate(data);
         validateSkills(data?.skills);
 
