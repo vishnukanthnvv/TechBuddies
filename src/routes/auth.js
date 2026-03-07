@@ -12,8 +12,11 @@ authRouter.post("/signup", async(req, res) => {
     const {
         firstName,
         lastName,
+        age,
+        gender,
         emailId,
-        password
+        password,
+        about
     } = req.body;
 
     try{
@@ -28,12 +31,24 @@ authRouter.post("/signup", async(req, res) => {
         const user = new User({
             firstName,
             lastName,
+            age,
+            gender,
             emailId,
-            password: passHash
+            password: passHash,
+            about
         });
 
-        await user.save();
-        res.send("User created successfully");
+        const savedUser = await user.save();
+        const token = await savedUser.getJwt();
+
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 7 *(24 * 3600000))
+        });
+
+        res.json({
+            message: "User created successfully",
+            data: savedUser
+        });
     } catch(err){
         res.status(400).send("Error: " + err.message);
     }
